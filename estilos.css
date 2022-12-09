@@ -1,0 +1,64 @@
+    
+    .bannerHeader{
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        background-color: dimgray;
+        padding-right: 10px;
+        min-width: 800px;
+    }
+
+    .footerLicense{
+        align-items: left;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap:10px;
+        background-color: black;
+        padding-right: 10px;
+        min-width: 800px;
+    }
+
+    .ImageCentered{
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        background-color: black;
+        padding-right: 10px;
+        min-width: 800px;
+        min-height: 352px;
+    }
+
+    p.consigna{
+        text-align: justify;
+        color: #B0E0E6;
+        font-size: .9em;
+    }
+
+    .containerHeaderExcercises{
+        display:flex;
+        flex-direction: column;
+        background-color: #2980B9;
+        opacity: 0.6;
+        border-radius: 1em;
+    }
+
+    .dataHeader1{
+        color: #FFFFFF;
+        text-shadow: #000000 0 -2px;
+        margin-bottom: .2em;
+        font-weight: bold;
+        align-self: center;
+    }
+
+    .dataHeader2{
+        color: #DCDCDC;
+        text-shadow: #000000 0 -2px;
+        margin: 0.1em;
+        font-weight: bold;
+        align-self: end;
+        margin-right: 1em;
+        margin-bottom: .6em;
+    }
