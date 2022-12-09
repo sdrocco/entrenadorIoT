@@ -314,6 +314,9 @@ with st.container():
                 <style>
                   button[role=tab]{
                     color: #FFF;
+                    font-size: 26px !important;
+                    color: #E74C3C;
+                    padding: 0em 1em;
                     transition: all 0.3s;
                     position: relative;
                   }
@@ -362,7 +365,7 @@ with st.container():
                     color: #E74C3C;
                     padding: 0em 1em;
                   }
-                  div[role="button"] > div > p{
+                  div[role="button"]{
                     font-size: 22px !important;
                     color: whitesmoke;
                     padding: 0em 1em;
