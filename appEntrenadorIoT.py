@@ -436,8 +436,11 @@ with tab2:
             col1, col2 = st.columns(2)
             with col1:
                 st.image("./Images/cables.png")
+                st.markdown("<h3>Jumper Pack Dupont Macho-Macho 20cm y 10cm - Cantidad: necesaria </h3>", unsafe_allow_html=True) 
             with col2:
-                st.markdown("<h3>Jumper Pack Dupont Macho-Macho 20cm y 10cm - Cantidad: necesaria </h3>", unsafe_allow_html=True)    
+                st.image("./Images/usbaminiusb.png")
+                st.markdown("<h3>Cable USB a Mini USB - Cantidad: 1 </h3>", unsafe_allow_html=True) 
+               
     with st.expander('Esquema de Montaje: Entrenador IoT'):
       with st.container():
         st.markdown('<h2 style="color: orange; text-align: right;">Diseño Preliminar con Arduino I y ESP8266</h2>', unsafe_allow_html=True)
