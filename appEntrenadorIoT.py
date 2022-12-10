@@ -175,8 +175,8 @@ if 'cssContent' not in st.session_state:
 #   st.session_state.servidorStart = True
 #   print("Servidor de Simuladores Rutina iniciado")        
         
-def leerRutinaExcel(nombreArchivo, hoja):
-    return pd.read_excel(nombreArchivo, sheet_name=hoja)
+def leerRutinaExcel(uploaded, hoja):
+    return pd.read_excel(io=uploaded, sheet_name=hoja)
 
 def on_changeActivarSimulador(simDisp, activacion):
   print('OnChange CheckBox Simulador: ')
@@ -719,16 +719,18 @@ WiFiUDP UDP;'''
 with tab3:      
   with st.container():
     st.markdown(f"<h3>App Rutinas de Entrenamiento</h3>", unsafe_allow_html=True)
-    with st.form("formRutinaFile"):
-      archivo = st.text_input("Archivo Rutinas", help="Ingrese el Path y el nombre del archivo Excel (.xlsx) que contiene las rutinas", placeholder="Ruta del Archivo de Rutinas")
+    uploadedFile = st.file_uploader("Cargar Archivo",type=['xlsx'])   
+    if uploadedFile is None:
+      st.warning("Seleccione un archivo excel (*.xlsx) que contenga la rutina a ejecutar")      
+    
+    with st.form("form_Rutina"):
       hoja = st.text_input("Nombre de la Hoja con la Rutina", help="Ingrese el nombre de la hoja en el archivo excel que tiene la rutina a ejecutar", placeholder="Nombre de la Hoja Excel que contiene la rutina")
-      clikedCargar = st.form_submit_button("Cargar Archivo")   
-      if clikedCargar:
-        st.session_state.rutinaDatos = leerRutinaExcel(archivo, hoja)
+      submitted = st.form_submit_button("Submit")
+      if submitted:
+        st.session_state.rutinaDatos = leerRutinaExcel(uploadedFile, hoja)
         st.write(st.session_state.rutinaDatos)
         st.session_state.rutinaCargada = True
-            
-   
+      
     if (st.session_state.rutinaCargada):
       clikedEjecutar = st.button("Ejecutar Rutina",disabled=False)
       if(clikedEjecutar) is True:
