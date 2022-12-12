@@ -240,7 +240,8 @@ def on_startEjecutarRutina(d, pq, ti, tmr, resp, tiemposRespuesta):
   global reply
   global server
 
-    
+  t.sleep(tiempoInicio/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
+  
   print("Entra a ejecutar la rutina")
   print("Se duerme por (ms): "+str(ti))
   timpoMaxRespuesta = tmr
@@ -253,41 +254,43 @@ def on_startEjecutarRutina(d, pq, ti, tmr, resp, tiemposRespuesta):
   clientSocket.setsockopt(sck.SOL_SOCKET, sck.SO_BROADCAST, 1)
   clientSocket.bind((sck.gethostbyname(sck.gethostname()), clientPort))
     
-  if(resp):
-    print('Solicita Respuesta: Si')
-    clientSocket.settimeout((timpoMaxRespuesta/1000)+1) # tiempo maximo de espera respuesta 
+  print('Solicita Respuesta: Si')
+  clientSocket.settimeout((timpoMaxRespuesta/1000)+1) # tiempo maximo de espera respuesta 
     
-    # Envio paquete respuesta UDP al servidor
-    try:
-      bytesTrasmitidos=clientSocket.sendto(pq.encode('utf-8'),(broadcast,serverPort)) 
+  # Envio paquete respuesta UDP al servidor
+  try:
+    bytesTrasmitidos=clientSocket.sendto(pq.encode('utf-8'),(broadcast,serverPort)) 
         
-      #  bytesTrasmitidos=clientSocket.sendto(pq.encode('utf-8'),(hostlocal,serverPort)) 
-      print("Trama Enviada a dispositivo "+str(d)+ " - Trasmitidos " + str(bytesTrasmitidos) + " bytes")
-      if(resp):
-        reply, server = clientSocket.recvfrom(64) 
-
-    except sck.timeout:
-      # No se recibio respuesta del servidor
+    #  bytesTrasmitidos=clientSocket.sendto(pq.encode('utf-8'),(hostlocal,serverPort)) 
+    print("Trama Enviada a dispositivo "+str(d)+ " - Trasmitidos " + str(bytesTrasmitidos) + " bytes")
+    reply, server = clientSocket.recvfrom(64)
+    
+    #se recibio respuesta del servidor
+    pos_inic = 0
+    pos_fin = reply.index("#")
+    pos_inic = pos_fin+1
+    pos_fin = reply.index("#", pos_inic)
+    tr = int(reply[pos_inic:pos_fin])  
+    tiemposRespuesta.append(tr)
+    print('Respuesta Servidor: {!r}'.format(reply))
+    clientSocket.settimeout(None) #Luego de recibir la respuesta quito timeout
+    if (reply is not None) and (server is not None):
+      print('Recibido {!r} de {!s}'.format(reply, server))   
+  
+  except sck.timeout:
+    # No se recibio respuesta del servidor
+    if(resp):
       tiemposRespuesta.append(tmr+1)
       print(tiemposRespuesta)
       print("No se recibio respuesta del Dispositivo "+str(d))
-      
     else:
-      #se recibio respuesta del servidor
-      pos_inic = 0
-      pos_fin = reply.index("#")
-      pos_inic = pos_fin+1
-      pos_fin = reply.index("#", pos_inic)
-      tr = int(reply[pos_inic:pos_fin])  
-      tiemposRespuesta.append(tr)
-      print('Respuesta Servidor: {!r}'.format(reply))
-      clientSocket.settimeout(None) #Luego de recibir la respuesta quito timeout
-      if (reply is not None) and (server is not None):
-        print('Recibido {!r} de {!s}'.format(reply, server)) 
-        
-    finally:
-      clientSocket.close()
+      tiemposRespuesta.append(-1)
+      print(tiemposRespuesta)
+
+  finally:
+    clientSocket.close()
     return 1 #Retorna 1 si no hubo error
+
 
 
 st.set_page_config(layout="wide")
@@ -730,16 +733,19 @@ with tab3:
         st.session_state.rutinaDatos = leerRutinaExcel(uploadedFile, hoja)
         st.write(st.session_state.rutinaDatos)
         st.session_state.rutinaCargada = True
+        st.session_state.rutinaEjecutada = False
       
     if (st.session_state.rutinaCargada):
+      tiempoTotalRutina = 0
       clikedEjecutar = st.button("Ejecutar Rutina",disabled=False)
       if(clikedEjecutar) is True:
         dataframe = st.session_state.rutinaDatos
 
         #Recorrer dataframe uno a uno y enviar los datagrama UDP
-        tiempo_rutina=0
+        # tiempo_rutina=0
         st.session_state.tiemposRespuesta.clear()
         progreso = st.progress(0)
+        
         for i in range(len(dataframe)):
           # Convierto tokens protocolo aplicacion entrenador IoT a los tipos de las variables
           # esperados por la función on_clickedEjecutarRutina(...)
@@ -747,30 +753,20 @@ with tab3:
           tiempoMax=dataframe.iloc[i]['TiempoMaxAct']
           esperaRespuesta = (dataframe.iloc[i]['Respuesta']>0)
           
-          # if(dataframe.iloc[i]['Rojo']>0):
-          #   colorLed="Roja"
-          # elif (dataframe.iloc[i]['Verde']>0):
-          #   colorLed="Verde"
-          # else:
-          #   colorLed="Apagado"
-          
-
-          t.sleep((tiempoInicio-tiempo_rutina)/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
-
+          # t.sleep((tiempoInicio-tiempo_rutina)/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
           hiloRutina = th.Thread(target=on_startEjecutarRutina, args=[dataframe.iloc[i]['Dispositivo'], dataframe.iloc[i]['Paquete'], tiempoInicio, tiempoMax, esperaRespuesta, st.session_state.tiemposRespuesta])
           hiloRutina.start() #Inicia schedule activacion Dispositivo
-          if(not esperaRespuesta):
-            t.sleep((tiempoMax)/1000)
-            st.session_state.tiemposRespuesta.append(-1)
-            tiempo_rutina = tiempoInicio + tiempoMax
-          else:
-            tiempo_rutina = tiempoInicio 
-          
-          progreso.progress((i+1)/len(dataframe))
-        
-        st.session_state.rutinaDatos['Tiempo Respuesta']=st.session_state.tiemposRespuesta
+          tiempoTotalRutina = tiempoInicio + tiempoMax
+          print(tiempoTotalRutina)
+          # progreso.progress((i+1)/len(dataframe))
+      
+        for p in range(11):
+          t.sleep((tiempoTotalRutina/10)/1000)
+          progreso.progress(p/10)  
         st.session_state.rutinaEjecutada = True
+      
       if(st.session_state.rutinaCargada and st.session_state.rutinaEjecutada):
+        st.session_state.rutinaDatos['Tiempo Respuesta']=st.session_state.tiemposRespuesta
         # grafico = st.line_chart(st.session_state.rutinaDatos, x="TiempoAccion", y=["TiempoMaxAct","Tiempo Respuesta"], use_container_width=True, height=300 )
         # grafico.title= "Tiempos de respuesta a las activaciones de los dispositivos de entrenamiento"
         x = np.arange(1,len(st.session_state.rutinaDatos["TiempoAccion"])+1,1)
