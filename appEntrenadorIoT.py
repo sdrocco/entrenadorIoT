@@ -234,16 +234,14 @@ def on_clickRespSimDisp(simDisp, horaResp):
   
 def on_startEjecutarRutina(d, pq, ti, tmr, resp, tiemposRespuesta):
   broadcast = '255.255.255.255'
-  hostlocal = sck.gethostbyname(sck.gethostname())
   serverPort = 4022
   clientPort = 4023
   global reply
   global server
 
-  t.sleep(tiempoInicio/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
-  
   print("Entra a ejecutar la rutina")
   print("Se duerme por (ms): "+str(ti))
+  t.sleep(ti/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
   timpoMaxRespuesta = tmr
   # Creo un socket para comunicacion por UDP
   
@@ -264,13 +262,14 @@ def on_startEjecutarRutina(d, pq, ti, tmr, resp, tiemposRespuesta):
     #  bytesTrasmitidos=clientSocket.sendto(pq.encode('utf-8'),(hostlocal,serverPort)) 
     print("Trama Enviada a dispositivo "+str(d)+ " - Trasmitidos " + str(bytesTrasmitidos) + " bytes")
     reply, server = clientSocket.recvfrom(64)
-    
+    strreply = reply.decode('utf-8') #Pasa byte array a String
     #se recibio respuesta del servidor
-    pos_inic = 0
-    pos_fin = reply.index("#")
-    pos_inic = pos_fin+1
-    pos_fin = reply.index("#", pos_inic)
-    tr = int(reply[pos_inic:pos_fin])  
+    print(strreply)
+    pos_inic = strreply.index("#")+1
+    pos_fin = strreply.index("##", pos_inic)
+    
+  
+    tr = int(strreply[pos_inic:pos_fin])
     tiemposRespuesta.append(tr)
     print('Respuesta Servidor: {!r}'.format(reply))
     clientSocket.settimeout(None) #Luego de recibir la respuesta quito timeout
@@ -735,14 +734,13 @@ with tab3:
         st.session_state.rutinaCargada = True
         st.session_state.rutinaEjecutada = False
       
-    if (st.session_state.rutinaCargada):
+    if (st.session_state.rutinaCargada and not st.session_state.rutinaEjecutada):
       tiempoTotalRutina = 0
       clikedEjecutar = st.button("Ejecutar Rutina",disabled=False)
       if(clikedEjecutar) is True:
         dataframe = st.session_state.rutinaDatos
 
         #Recorrer dataframe uno a uno y enviar los datagrama UDP
-        # tiempo_rutina=0
         st.session_state.tiemposRespuesta.clear()
         progreso = st.progress(0)
         
@@ -753,12 +751,12 @@ with tab3:
           tiempoMax=dataframe.iloc[i]['TiempoMaxAct']
           esperaRespuesta = (dataframe.iloc[i]['Respuesta']>0)
           
-          # t.sleep((tiempoInicio-tiempo_rutina)/1000) #Duermo el hilo hasta que llegue la hora de activacion del dispositivo. Ver Cambio de unidad ms a s
           hiloRutina = th.Thread(target=on_startEjecutarRutina, args=[dataframe.iloc[i]['Dispositivo'], dataframe.iloc[i]['Paquete'], tiempoInicio, tiempoMax, esperaRespuesta, st.session_state.tiemposRespuesta])
           hiloRutina.start() #Inicia schedule activacion Dispositivo
           tiempoTotalRutina = tiempoInicio + tiempoMax
-          print(tiempoTotalRutina)
-          # progreso.progress((i+1)/len(dataframe))
+        
+        print(tiempoTotalRutina) #muestro tiempo total de la rutina
+
       
         for p in range(11):
           t.sleep((tiempoTotalRutina/10)/1000)
@@ -767,8 +765,7 @@ with tab3:
       
       if(st.session_state.rutinaCargada and st.session_state.rutinaEjecutada):
         st.session_state.rutinaDatos['Tiempo Respuesta']=st.session_state.tiemposRespuesta
-        # grafico = st.line_chart(st.session_state.rutinaDatos, x="TiempoAccion", y=["TiempoMaxAct","Tiempo Respuesta"], use_container_width=True, height=300 )
-        # grafico.title= "Tiempos de respuesta a las activaciones de los dispositivos de entrenamiento"
+
         x = np.arange(1,len(st.session_state.rutinaDatos["TiempoAccion"])+1,1)
         ancho = 0.35 #ancho de las barras
         plt.rcParams.update({
